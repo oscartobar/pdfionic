@@ -25,29 +25,41 @@ export class PdfService {
     };
 
     // Generar el PDF en base64
-    const pdfDocGenerator = pdfMake.createPdf(documentDefinition);
+    try{
+      const pdfDocGenerator = pdfMake.createPdf(documentDefinition);
 
-
-    pdfDocGenerator.getBuffer(async (buffer) => {
+      pdfDocGenerator.getBuffer(async (buffer) => {
       
-      if (this.platform.is('android')) {
-
-        const hasPermission = await this.checkPermissions();
-
-        if (hasPermission) {
-          // Aquí llamas a tu lógica para generar y abrir el PDF
-         
-          pdfDocGenerator.getBase64(async (base64Data) => {
-            await this.saveToDevice(base64Data);
-          });
-
+        if (this.platform.is('android')) {
+          console.log('Generando PDF en Android...');
+          const hasPermission = await this.checkPermissions();
+  
+          if (hasPermission) {
+            // Aquí llamas a tu lógica para generar y abrir el PDF
+            console.log('entro por que tiene permisos');
+            pdfDocGenerator.getBase64(async (base64Data) => {
+              console.log('inicia la descarga');
+              await this.saveToDevice(base64Data);
+            });
+            console.log('fin descarga');
+          }
+          
+        } else {
+          const blob = new Blob([buffer], { type: 'application/pdf' });
+          console.log('inicia la descarga en pc');
+          await this.downloadPdfPC(blob);
+          console.log('fin la descarga');
         }
-        
-      } else {
-        const blob = new Blob([buffer], { type: 'application/pdf' });
-        await this.downloadPdfPC(blob);
-      }
-    });
+      });
+      
+    }
+      catch (e) {
+      console.error('Error generando el PDF:', e);
+    }
+
+
+
+   
 
 
    
@@ -106,6 +118,7 @@ export class PdfService {
         });
 
         // Si se puede leer, entonces ya tenemos permisos.
+        console.log('Tiene permisos bien');
         return true;
       } catch (e) {
         // Si no se pueden leer archivos, intentamos solicitar los permisos.
@@ -129,9 +142,10 @@ export class PdfService {
 
           // Verificamos si el permiso fue concedido después de la solicitud.
           if (result.publicStorage === 'granted') {
+            console.log('Permisos concedidos.');
             return true;
           } else {
-            alert('Permiso denegado. No se puede continuar sin permisos de almacenamiento.');
+            console.error('Permiso denegado. No se puede continuar sin permisos de almacenamiento. ');
             return false;
           }
         }
