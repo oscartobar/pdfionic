@@ -16,3 +16,4 @@ Instalar Ionic CLI 8:
 npm install -g @ionic/cli@8
 
 ----
+npm i --save-dev @types/pdfmake 
