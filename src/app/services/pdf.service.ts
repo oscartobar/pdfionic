@@ -47,7 +47,14 @@ export class PdfService {
       pdfmake.vfs = pdfFonts.pdfMake.vfs;
 
       const pdfDocGenerator = pdfMake.createPdf({ content: 'This is a sample PDF' });
-
+      if (this.platform.is('desktop')) {
+        // Generar el PDF y descargarlo en el navegador
+        pdfDocGenerator.getBlob((blob) => {
+          this.downloadPdfPC(blob);
+        });
+        return;
+      }
+      //si es android
       pdfDocGenerator.getBase64( (base64Data) => {
       //   guardar PDF en el sistema de archivos
         Filesystem.writeFile({
