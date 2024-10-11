@@ -12,7 +12,7 @@ export class PdfViewerComponent  implements OnInit {
 
   // Función para generar y mostrar el PDF
   generateAndShowPdf() {
-    this.pdfService.generatePdf();
+    this.pdfService.createFile();
   }
 
   ngOnInit() {}

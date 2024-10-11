@@ -1,10 +1,41 @@
 import { Injectable } from '@angular/core';
 import * as pdfMake from 'pdfmake/build/pdfmake';
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
-import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Directory, Encoding } from '@capacitor/filesystem';
 import { Browser } from '@capacitor/browser';  // Para abrir el PDF en el navegador
 import { Platform } from '@ionic/angular';
 import { Capacitor } from '@capacitor/core';
+import { PermissionStatus } from '@capacitor/filesystem';
+import { Filesystem } from '@capacitor/filesystem';
+
+
+const writeSecretFile = async () => {
+  await Filesystem.writeFile({
+    path: 'secrets/text.txt',
+    data: 'This is a test',
+    directory: Directory.Documents,
+    encoding: Encoding.UTF8,
+  });
+  console.log('creado el archivo en', Directory.Documents);
+
+};
+
+const readSecretFile = async () => {
+  const contents = await Filesystem.readFile({
+    path: 'secrets/text.txt',
+    directory: Directory.Documents,
+    encoding: Encoding.UTF8,
+  });
+  console.log('lee en:', Directory.Documents);
+  console.log('secrets:', contents);
+};
+
+const deleteSecretFile = async () => {
+  await Filesystem.deleteFile({
+    path: 'secrets/text.txt',
+    directory: Directory.Documents,
+  });
+};
 
 (pdfMake as any).vfs = pdfFonts.pdfMake.vfs;
 
@@ -13,8 +44,42 @@ import { Capacitor } from '@capacitor/core';
 })
 export class PdfService {
 
-  constructor(private platform: Platform) { }
+  constructor(private platform: Platform) { 
+    this.checkPermissions();
+  }
 
+  
+  async checkPermissions() {
+    try {
+      // Solicitar permisos de almacenamiento
+      const permissions = await Filesystem.requestPermissions();
+
+      if (permissions.publicStorage === 'granted') {
+        console.log('Permiso de almacenamiento concedido');
+        // Puedes continuar accediendo al sistema de archivos
+        this.createFile();
+      } else {
+        console.log('Permiso de almacenamiento denegado');
+      }
+    } catch (e) {
+      console.error('Error al solicitar permisos:', e);
+    }
+  }
+
+  async createFile() {
+    try {
+      // Crear un archivo como ejemplo
+      const result = await Filesystem.writeFile({
+        path: 'test.txt',
+        data: 'Contenido de prueba para el archivo',
+        directory: Directory.Documents,
+        encoding: Encoding.UTF8,
+      });
+      console.log('Archivo creado en:', result.uri);
+    } catch (e) {
+      console.error('Error al crear archivo:', e);
+    }
+  }
 
   async generatePdf() {
     const documentDefinition = {
@@ -32,9 +97,8 @@ export class PdfService {
       
         if (this.platform.is('android')) {
           console.log('Generando PDF en Android...');
-          const hasPermission = await this.checkPermissions();
-  
-          if (hasPermission) {
+          //const hasPermission = await this.checkPermissions2();
+          
             // Aquí llamas a tu lógica para generar y abrir el PDF
             console.log('entro por que tiene permisos');
             pdfDocGenerator.getBase64(async (base64Data) => {
@@ -42,7 +106,7 @@ export class PdfService {
               await this.saveToDevice(base64Data);
             });
             console.log('fin descarga');
-          }
+         
           
         } else {
           const blob = new Blob([buffer], { type: 'application/pdf' });
@@ -56,11 +120,6 @@ export class PdfService {
       catch (e) {
       console.error('Error generando el PDF:', e);
     }
-
-
-
-   
-
 
    
   }
@@ -105,61 +164,6 @@ export class PdfService {
   async openPdf(uri: string) {
     await Browser.open({ url: uri });
   }
-
-  
-  async checkPermissions() {
-    // Sólo para Android, ya que el manejo de permisos es específico para plataformas móviles.
-    if (this.platform.is('android')) {
-      try {
-        // Aquí intentamos leer una carpeta para verificar si los permisos están disponibles.
-        await Filesystem.readFile({
-          path: 'dummy.txt',
-          directory: Directory.Data,
-        });
-
-        // Si se puede leer, entonces ya tenemos permisos.
-        console.log('Tiene permisos bien');
-        return true;
-      } catch (e) {
-        // Si no se pueden leer archivos, intentamos solicitar los permisos.
-        console.log('No tenemos permisos, solicitando...');
-        return await this.requestPermissions();
-      }
-    }
-    // Si no estamos en Android, no necesitamos permisos adicionales.
-    return true;
-  }
-
-  async requestPermissions() {
-    // A partir de Android 6.0 (API 23), necesitamos solicitar permisos en tiempo de ejecución.
-    if (Capacitor.isNativePlatform()) {
-      try {
-        const permissionStatus = await Filesystem.checkPermissions();
-
-        // Si el permiso no está concedido, lo solicitamos.
-        if (permissionStatus.publicStorage !== 'granted') {
-          const result = await Filesystem.requestPermissions();
-
-          // Verificamos si el permiso fue concedido después de la solicitud.
-          if (result.publicStorage === 'granted') {
-            console.log('Permisos concedidos.');
-            return true;
-          } else {
-            console.error('Permiso denegado. No se puede continuar sin permisos de almacenamiento. ');
-            return false;
-          }
-        }
-
-        return true;
-      } catch (error) {
-        console.error('Error al solicitar permisos: ', error);
-        return false;
-      }
-    }
-
-    return false;
-  }
-
 
   // NUEVA FUNCIÓN: Permite descargar el PDF generado
   async downloadPdf(patharchivo : string) {
