@@ -9,43 +9,17 @@ import { PermissionStatus } from '@capacitor/filesystem';
 import { Filesystem } from '@capacitor/filesystem';
 
 
-const writeSecretFile = async () => {
-  await Filesystem.writeFile({
-    path: 'secrets/text.txt',
-    data: 'This is a test',
-    directory: Directory.Documents,
-    encoding: Encoding.UTF8,
-  });
-  console.log('creado el archivo en', Directory.Documents);
-
-};
-
-const readSecretFile = async () => {
-  const contents = await Filesystem.readFile({
-    path: 'secrets/text.txt',
-    directory: Directory.Documents,
-    encoding: Encoding.UTF8,
-  });
-  console.log('lee en:', Directory.Documents);
-  console.log('secrets:', contents);
-};
-
-const deleteSecretFile = async () => {
-  await Filesystem.deleteFile({
-    path: 'secrets/text.txt',
-    directory: Directory.Documents,
-  });
-};
-
 (pdfMake as any).vfs = pdfFonts.pdfMake.vfs;
 
 @Injectable({
   providedIn: 'root'
 })
 export class PdfService {
-
+  
   constructor(private platform: Platform) { 
-    this.checkPermissions();
+    var writeSecretFile = async () => {
+      await this.checkPermissions();
+    };
   }
 
   
@@ -68,14 +42,28 @@ export class PdfService {
 
   async createFile() {
     try {
+        
+      var writeSecretFile = async () => {
+        await this.checkPermissions();
+      };
       // Crear un archivo como ejemplo
       const result = await Filesystem.writeFile({
         path: 'test.txt',
         data: 'Contenido de prueba para el archivo',
-        directory: Directory.Documents,
+        directory: Directory.Data,
         encoding: Encoding.UTF8,
       });
       console.log('Archivo creado en:', result.uri);
+      
+      const contents = await Filesystem.readFile({
+        path: result.uri,
+       
+        encoding: Encoding.UTF8,
+      });
+      console.log('lee en:', Directory.Data);
+      console.log('contenido:', contents);
+    
+
     } catch (e) {
       console.error('Error al crear archivo:', e);
     }
@@ -124,7 +112,37 @@ export class PdfService {
    
   }
 
+  
+ writeSecretFile = async () => {
+  await Filesystem.writeFile({
+    path: 'secrets/text.txt',
+    data: 'This is a test',
+    directory: Directory.Documents,
+    encoding: Encoding.UTF8,
+    recursive: true,
+  });
+  console.log('creado el archivo en', Directory.Documents);
 
+};
+
+ readSecretFile = async () => {
+  const contents = await Filesystem.readFile({
+    path: 'secrets/text.txt',
+    directory: Directory.Documents,
+    encoding: Encoding.UTF8,
+  });
+  console.log('lee en:', Directory.Documents);
+  console.log('secrets:', contents);
+};
+
+ deleteSecretFile = async () => {
+  await Filesystem.deleteFile({
+    path: 'secrets/text.txt',
+    directory: Directory.Documents,
+  });
+};
+
+ 
   
   async downloadPdfPC(blob: Blob) {
        // Crear una URL para descargar el PDF en el navegador
